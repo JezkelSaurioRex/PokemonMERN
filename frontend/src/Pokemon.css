@@ -1,0 +1,11 @@
+li{
+    font-size: large;
+    font-weight: bold;
+    display: inline-block;
+    align-self: center;
+    padding: 20px;
+}
+
+#sprites{
+    display: block;
+}
