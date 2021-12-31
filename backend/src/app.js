@@ -5,6 +5,7 @@ const cors = require('cors');
 const pokemones = require('./pokemon');
 const app = express()
 const port = 5000
+const http = require('http');
 
 app.use(express.json())
 app.use(cors({
@@ -27,6 +28,7 @@ var teams = [
     accion: null
   }
 ];
+let sockets = []; 
 
 loadPokemon();
 
@@ -109,8 +111,20 @@ app.post('/pokemon/estadisticas', (req, res) => {
   }
 })
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
+})
+
+const {Server} = require('socket.io');  
+const io = new Server(server, {cors: {origin:'*'}});
+
+io.on('connection', (socket) => {
+  console.log('se conecto un usuario');
+  sockets.push(socket);
+  if(sockets.length > 1){
+    sockets.forEach((socket, index) => socket.emit('start', index));
+    sockets = [];
+  }
 })
 
 async function loadPokemon() {
@@ -124,7 +138,7 @@ async function loadPokemon() {
 function cargaTeam(id) {
   for (var i = 0; i < 3; i++) {
     var random = Math.floor(Math.random() * 151);
-    var poke = pokeList[i + 3 * (id)];
+    var poke = pokeList[random];//i + 3 * (id)
 
     var hp = poke.stats[0].base_stat;
     teams[id].hps.push(hp);
