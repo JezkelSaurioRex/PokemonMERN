@@ -3,8 +3,6 @@ import SalaEspera from "./SalaEspera";
 import Main from "./Main";
 
 
-//bandera para que vea si entra a la SE o al Main
-
 class App extends React.Component {
 
   constructor(props){
