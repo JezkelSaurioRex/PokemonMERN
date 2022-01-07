@@ -1,50 +1,33 @@
 import './Main.css';
 import React from 'react';
-import Pokemon from './Pokemon';
+import Menu from './Menu';
 import Sound from 'react-sound';
 import PokeMusic from './Musica/PokeMusic.mp3';
 const urlBase = 'http://localhost:5000/';
 
+
 class Main extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {pokemones: []};
-    console.log(this.props.equipo);
+    this.state = { info: {}, mostrarPoke: false, modo: 'principal' };
   }
 
-  equipo = async() =>{
-    const url = urlBase + "pokemon/teams?equipo="+this.props.equipo;
-    var equipo = await (await fetch(url)).json();
-    let pokemones = equipo.pokemon.map(pokemon => 
-      (<Pokemon pokemon={pokemon} 
-      onStatsCombate={this.statsCombate.bind(this)}
-      />));
-    console.log(pokemones);
-    this.setState({pokemones: pokemones});
+  async componentDidMount (){
+    const url = urlBase + "pokemon/teams?equipo=" + this.props.equipo;
+    fetch(url)
+    .then((response) => response.json())
+    .then(pokemones => {
+        this.setState({ info: pokemones });
+    });
   }
-
-  statsCombate(stats, moves) {
-    document.getElementById('statsTabla').innerHTML = stats.map(stat => 
-      `<div>
-        <b>${stat.stat.name}</b>
-        <div>${stat.base_stat}</div>
-        <br/>
-      </div>`
-    ).join('')
-
-    document.getElementById('movesTabla').innerHTML = moves.map(move => 
-      `<button>
-        <b>${move.name}</b>
-        <div>Power ${move.power}</div>
-        <div>PP ${move.pp}</div>
-        <br/>
-      </button>`
-    ).join('')
-  }
+  //{console.log(this.state.info.pokemon[0])}
 
   render() {
-    return (   
+
+    return (
+
       <body>
+        {console.log(this.state.info)}
         <Sound
           url={PokeMusic}
           playStatus={Sound.status.PLAYING}
@@ -52,28 +35,25 @@ class Main extends React.Component {
           loop={true}
           volume={5}
         />
-        <div id="div_equipos">       
-          <ul id='pokesTabla'>
-            {this.state.pokemones}
-          </ul>
-          <div>
-            <h1>
-              estadisticas
-            </h1>
-              <ul id='statsTabla' className='Tabla'/>     
-          </div>
-          <div>
-            <h1>
-              ataques
-            </h1>
-              <ul id='movesTabla' className='Tabla'/> 
-          </div>    
-        </div>
-        <br/>
-        <button className="botonEquipo" onClick={this.equipo}>
+        <div>
+          <br />
+          { this.state.mostrarPoke && 
+            <div>
+              <Menu pokemon={this.state.info.pokemon} modo={this.state.modo} enBatalla={this.state.info.enBatalla}/>
+            </div>
+          }
+          <br />
+          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "principal"}))}>
+            batalla
+          </button>
+          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "pokemon"}))}>
             equipo
-        </button>
-      </body>      
+          </button>
+          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "stats"}))}>
+            stats
+          </button>
+        </div>
+      </body>
     );
   }
 }
