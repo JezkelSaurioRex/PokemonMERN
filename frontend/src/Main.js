@@ -3,22 +3,25 @@ import React from 'react';
 import Menu from './Menu';
 import Sound from 'react-sound';
 import PokeMusic from './Musica/PokeMusic.mp3';
+import BotonesMenu from "./BotonesMenu";
+
 const urlBase = 'http://localhost:5000/';
 
 
 class Main extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { info: {}, mostrarPoke: false, modo: 'principal' };
+    this.state = { info: {}, mostrarPoke: false };
   }
 
-  async componentDidMount (){
+  async componentDidMount() {
     const url = urlBase + "pokemon/teams?equipo=" + this.props.equipo;
     fetch(url)
-    .then((response) => response.json())
-    .then(pokemones => {
-        this.setState({ info: pokemones });
-    });
+      .then((response) => response.json())
+      .then(pokemones => {
+        this.setState({ info: pokemones, mostrarPoke: true, opcion: "pelea" });
+      });
+
   }
   //{console.log(this.state.info.pokemon[0])}
 
@@ -27,7 +30,6 @@ class Main extends React.Component {
     return (
 
       <body>
-        {console.log(this.state.info)}
         <Sound
           url={PokeMusic}
           playStatus={Sound.status.PLAYING}
@@ -37,21 +39,27 @@ class Main extends React.Component {
         />
         <div>
           <br />
-          { this.state.mostrarPoke && 
+          {this.state.mostrarPoke &&
             <div>
-              <Menu pokemon={this.state.info.pokemon} modo={this.state.modo} enBatalla={this.state.info.enBatalla}/>
+              <Menu pokemon={this.state.info.pokemon} enBatalla={this.state.info.enBatalla} />
+              <br />
+              <button onClick={() => this.setState({ opcion: "pelea" })}>
+                pelea
+              </button>
+              <button onClick={() => this.setState({ opcion: "cambio" })}>
+                cambio
+              </button>
+              <button onClick={() => this.setState({ opcion: "curar" })}>
+                curar
+              </button>
+              {this.state.opcion !== "" &&
+                <div>
+                  <BotonesMenu pokemon={this.state.info.pokemon} enBatalla={this.state.info.enBatalla} modo={this.state.opcion} />
+                </div>
+              }
             </div>
           }
           <br />
-          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "principal"}))}>
-            batalla
-          </button>
-          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "pokemon"}))}>
-            equipo
-          </button>
-          <button className="botonEquipo" onClick={() => (this.setState({ mostrarPoke: true , modo: "stats"}))}>
-            stats
-          </button>
         </div>
       </body>
     );
