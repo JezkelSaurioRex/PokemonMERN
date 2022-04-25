@@ -28,8 +28,8 @@ var teams = [
     accion: null
   }
 ];
-let sockets = []; 
-
+let sockets = {};
+let salaDeEspera = [];
 loadPokemon();
 
 app.get('/', (req, res) => {
@@ -41,50 +41,7 @@ app.get('/pokemon/teams', (req, res) => {
     res.send('i\'m loading, please wait =owo=')
   } else {
     var team = req.query.equipo;
-    res.json(teams[team]);
-  }
-})
-
-app.post('/pokemon/vidas', (req, res) => {
-  if (loading) {
-    res.send('i\'m loading, please wait =owo=')
-  } else {
-    var team = req.body.team;
-    res.json(teams[team].hps);
-  }
-})
-
-app.post('/pokemon/accion', async (req, res) => {
-  if (loading) {
-    res.send('i\'m loading, please wait =owo=')
-  } else {
-    var equipo = req.body.team;
-    var enemigo = (equipo + 1) % 2;
-    var campo = teams[equipo].enBatalla;
-    var campoEnemigo = teams[enemigo].enBatalla;
-    if (teams[equipo].hps[campo] > 0) {
-      if (!teams[enemigo].accion) {
-
-        teams[equipo].accion = req.body;
-        res.send('accion cargada!')
-
-      } else {
-        if (teams[equipo].pokemon[campo].stats[5].base_stat >= teams[enemigo].pokemon[campoEnemigo].stats[5].base_stat) {
-          acciones(req.body);
-          acciones(teams[enemigo].accion);
-          teams[enemigo].accion = null;
-        } else {
-          acciones(teams[enemigo].accion);
-          acciones(req.body);
-          teams[enemigo].accion = null;
-        }
-      }
-      res.send('acciones terminadas!');
-    }else {
-      acciones(req.body);
-      teams[enemigo].accion = null;
-      res.send(`el pokemon ${campo} ya no puede pelear!`);
-    }
+    res.json({ ...teams[team], socket: null });
   }
 })
 
@@ -115,16 +72,55 @@ const server = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
 
-const {Server} = require('socket.io');  
-const io = new Server(server, {cors: {origin:'*'}});
+const { Server } = require('socket.io');
+const io = new Server(server, { cors: { origin: '*' } });
 
 io.on('connection', (socket) => {
   console.log('se conecto un usuario');
-  sockets.push(socket);
-  if(sockets.length > 1){
-    sockets.forEach((socket, index) => socket.emit('start', index));
-    sockets = [];
+  salaDeEspera.push(socket);
+  if (salaDeEspera.length > 1) {
+    salaDeEspera.forEach((s, index) => {
+      s.emit('start', index);
+      teams[index].socket = s;
+    })
+    salaDeEspera = [];
   }
+  socket.on('accion', (body) => {
+    if (loading) {
+      res.send('i\'m loading, please wait =owo=')
+    } else {
+      var equipo = body.team;
+      var enemigo = (equipo + 1) % 2;
+      var campo = teams[equipo].enBatalla;
+      var campoEnemigo = teams[enemigo].enBatalla;
+      if (teams[equipo].hps[campo] > 0) {
+        if (!teams[enemigo].accion) {
+
+          teams[equipo].accion = body;
+
+        } else {
+          if (teams[equipo].pokemon[campo].stats[5].base_stat >= teams[enemigo].pokemon[campoEnemigo].stats[5].base_stat) {
+            acciones(body);
+            acciones(teams[enemigo].accion);
+            teams[enemigo].accion = null;
+          } else {
+            acciones(teams[enemigo].accion);
+            acciones(body);
+            teams[enemigo].accion = null;
+          }
+          teams.forEach(t => {
+            t.socket.emit('resultadoAccion', { ...t, socket: null })
+          });
+        }
+        //res.send('acciones terminadas!');
+      } else {
+        acciones(body);
+        teams[enemigo].accion = null;
+        teams.forEach(t => t.socket.emit('resultadoAccion', { ...t, socket: null }));
+        //res.send(`el pokemon ${campo} ya no puede pelear!`);
+      }
+    }
+  })
 })
 
 async function loadPokemon() {
@@ -160,18 +156,19 @@ function acciones(act) {
       var potenciaAtk;
       var danoTotal;
 
-      if(teams[equipo].hps[pokeAliado] > 0){
+      if (teams[equipo].hps[pokeAliado] > 0) {
         atk = teams[equipo].pokemon[pokeAliado].stats[1].base_stat / 100;
         potenciaAtk = teams[equipo].pokemon[pokeAliado].moves[ataque].power;
         danoTotal = atk * potenciaAtk;
         teams[enemigo].hps[pokeEnemigo] -= danoTotal;
       }
+      console.log("ataque procesa3")
       break;
     case "cambio":
       cambios(act);
       break;
     case "curacion":
-      if(teams[equipo].hps[pokeAliado] > 0){
+      if (teams[equipo].hps[pokeAliado] > 0) {
         var curado = teams[equipo].enBatalla
         teams[equipo].hps[curado] = Math.min(
           teams[equipo].hps[curado] + 15,

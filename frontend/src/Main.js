@@ -19,12 +19,31 @@ class Main extends React.Component {
     fetch(url)
       .then((response) => response.json())
       .then(pokemones => {
+        console.log("saquenme de este infierno llamado no cenar")
         this.setState({ info: pokemones, mostrarPoke: true, opcion: "pelea" });
       });
 
+    this.props.socket.on('resultadoAccion', team => {
+      this.setState({info: team})
+      console.log(team);
+    })
   }
-  //{console.log(this.state.info.pokemon[0])}
 
+  /*async funcionPrueba() {
+    const url = urlBase + "pokemon/accion"
+    const body = { team: this.props.equipo, accion: "cambio", pokemon: 1 };
+    const options = {
+      method: "POST",
+      body: JSON.stringify(body),
+    };
+    fetch(url, options)
+      .then((response) => response.json())
+      .then(pokemones => {
+        this.setState({ info: pokemones });
+      });
+  }
+  {console.log(this.state.info.pokemon[0])}
+*/
   render() {
 
     return (
@@ -54,7 +73,13 @@ class Main extends React.Component {
               </button>
               {this.state.opcion !== "" &&
                 <div>
-                  <BotonesMenu pokemon={this.state.info.pokemon} enBatalla={this.state.info.enBatalla} modo={this.state.opcion} />
+                  <BotonesMenu
+                    pokemon={this.state.info.pokemon}
+                    enBatalla={this.state.info.enBatalla}
+                    modo={this.state.opcion}
+                    socket={this.props.socket}
+                    equipo={this.props.equipo} 
+                  />
                 </div>
               }
             </div>

@@ -3,25 +3,26 @@ import React from "react";
 function BotonesMenu(props) {
 
     let result;
-    let modo = props.modo;
-    let pokemones = props.pokemon;
-    let enBatalla = props.enBatalla;
+    let { modo, pokemon, enBatalla, socket, equipo } = props;
 
-    console.log(props);
     switch (modo) {
         case 'pelea':
-            result = pokemones[enBatalla].moves.map(p =>
+            result = pokemon[enBatalla].moves.map((p, index) =>
                 <ul>
-                    <button>
+                    <button onClick={() => {
+                        console.log(equipo);
+                        socket.emit('accion', { team: equipo, accion: "ataque", ataque: index })
+                    }}>
                         <b>{p.name}</b>
                         <div>Power {p.power}</div>
                         <div>PP {p.pp}</div>
                         <br />
                     </button>
-                </ul>);
+                </ul>
+            );
             break;
         case 'cambio':
-            result = pokemones.map(p =>
+            result = pokemon.map(p =>
                 <ul>
                     <button>
                         <img alt="" src={p.sprites.front_default} />
@@ -30,7 +31,7 @@ function BotonesMenu(props) {
                 </ul>);
             break;
         case 'curar':
-            result = pokemones[0].stats.map(p =>
+            result = pokemon[0].stats.map(p =>
                 <ul>
                     <b>{p.stat.name}= {p.base_stat}</b>
                     <br />
